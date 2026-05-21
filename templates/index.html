@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        AI Hybrid Semantic Search
+    </title>
+
+    <style>
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            background-color: #f5f5f5;
+
+            margin: 0;
+
+            padding: 40px;
+        }
+
+        h1 {
+
+            color: #222;
+
+            margin-bottom: 20px;
+        }
+
+        form {
+
+            position: relative;
+
+            margin-bottom: 30px;
+        }
+
+        input {
+
+            width: 600px;
+
+            max-width: 90%;
+
+            padding: 14px;
+
+            font-size: 16px;
+
+            border-radius: 8px;
+
+            border: 1px solid #ccc;
+
+            outline: none;
+        }
+
+        input:focus {
+
+            border-color: #007bff;
+        }
+
+        button {
+
+            padding: 14px 24px;
+
+            font-size: 16px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            background-color: #007bff;
+
+            color: white;
+
+            cursor: pointer;
+
+            margin-left: 10px;
+        }
+
+        button:hover {
+
+            background-color: #0056b3;
+        }
+
+        #suggestions {
+
+            position: absolute;
+
+            width: 600px;
+
+            max-width: 90%;
+
+            background: white;
+
+            border: 1px solid #ccc;
+
+            border-top: none;
+
+            max-height: 300px;
+
+            overflow-y: auto;
+
+            z-index: 1000;
+
+            border-radius: 0 0 10px 10px;
+        }
+
+        .suggestion-item {
+
+            padding: 12px;
+
+            border-bottom: 1px solid #eee;
+
+            cursor: pointer;
+
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+
+            background-color: #f0f0f0;
+        }
+
+        .result-box {
+
+            background: white;
+
+            padding: 20px;
+
+            margin-bottom: 20px;
+
+            border-radius: 12px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .result-box h2 {
+
+            margin: 0;
+
+            color: #007bff;
+        }
+
+        .result-box h3 {
+
+            margin-top: 10px;
+
+            color: #333;
+        }
+
+        .result-box p {
+
+            color: #555;
+
+            line-height: 1.6;
+        }
+
+        .open-btn {
+
+            display: inline-block;
+
+            margin-top: 15px;
+
+            padding: 10px 16px;
+
+            background-color: #28a745;
+
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 8px;
+        }
+
+        .open-btn:hover {
+
+            background-color: #1f7d34;
+        }
+
+        .query-box {
+
+            background: white;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            margin-bottom: 20px;
+
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        .query-box p {
+
+            margin: 5px 0;
+        }
+
+        .document-link {
+
+            text-decoration: none;
+
+            color: #007bff;
+
+            transition: 0.2s;
+        }
+
+       .document-link:hover {
+
+        color: #0056b3;
+
+        text-decoration: underline;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>
+        Document Search Engine
+    </h1>
+
+    <!-- ========================= -->
+    <!-- Search Form -->
+    <!-- ========================= -->
+
+    <form method="POST">
+
+        <input
+            type="text"
+            name="query"
+            id="search-box"
+            placeholder="Search documents..."
+            autocomplete="off"
+            required
+        >
+
+        <button type="submit">
+            Search
+        </button>
+
+        <!-- Suggestions -->
+        <div id="suggestions"></div>
+
+    </form>
+
+    <!-- ========================= -->
+    <!-- Query Information -->
+    <!-- ========================= -->
+
+    {% if original_query %}
+
+        <div class="query-box">
+
+            <p>
+                <strong>Original Query:</strong>
+                {{ original_query }}
+            </p>
+
+            <p>
+                <strong>Corrected Query:</strong>
+                {{ corrected_query }}
+            </p>
+
+            <p>
+                <strong>Expanded Query:</strong>
+                {{ expanded_query }}
+            </p>
+
+        </div>
+
+    {% endif %}
+
+    <!-- ========================= -->
+    <!-- Search Results -->
+    <!-- ========================= -->
+
+    {% for result in results %}
+
+        <div class="result-box">
+
+            <h2>
+                Rank {{ result.rank }}
+            </h2>
+
+            <h3>
+
+                    <a
+
+                        href="{{ url_for('open_document', filename=result.file) }}"
+
+                        target="_blank"
+
+                        class="document-link"
+                    >
+
+                    {{ result.file }}
+
+                    </a>
+
+            </h3>
+
+            <p>
+                {{ result.text }}
+            </p>
+
+            <p>
+                <strong>Hybrid Score:</strong>
+                {{ result.score }}
+            </p>
+
+            <a
+                href="{{ url_for('open_document', filename=result.file) }}"
+                target="_blank"
+                class="document-link"
+            >   
+            </a>
+
+        </div>
+
+    {% endfor %}
+
+    <!-- ========================= -->
+    <!-- Autocomplete Script -->
+    <!-- ========================= -->
+
+    <script>
+
+        const searchBox = document.getElementById(
+            "search-box"
+        );
+
+        const suggestionsDiv = document.getElementById(
+            "suggestions"
+        );
+
+        // =========================
+        // Autocomplete
+        // =========================
+
+        searchBox.addEventListener(
+
+            "keyup",
+
+            async function () {
+
+                const query = searchBox.value;
+
+                // Minimum query length
+                if (query.length < 2) {
+
+                    suggestionsDiv.innerHTML = "";
+
+                    return;
+                }
+
+                try {
+
+                    const response = await fetch(
+
+                        `/autocomplete?q=${encodeURIComponent(query)}`
+
+                    );
+
+                    const data = await response.json();
+
+                    // Clear old suggestions
+                    suggestionsDiv.innerHTML = "";
+
+                    // Show suggestions
+                    data.suggestions.forEach(item => {
+
+                        const div = document.createElement(
+                            "div"
+                        );
+
+                        div.classList.add(
+                            "suggestion-item"
+                        );
+
+                        div.innerText = item.text;
+
+                        // Click suggestion
+                        div.onclick = function () {
+
+                            window.open(
+
+                                `/open/${encodeURIComponent(item.file)}`,
+
+                                "_blank"
+
+                            );
+
+                        };
+
+                        suggestionsDiv.appendChild(div);
+
+                    });
+
+                } catch (error) {
+
+                    console.log(
+                        "Autocomplete Error:",
+                        error
+                    );
+
+                }
+
+            }
+
+        );
+
+        // =========================
+        // Hide Suggestions
+        // =========================
+
+        document.addEventListener(
+
+            "click",
+
+            function (e) {
+
+                if (
+                    e.target !== searchBox
+                ) {
+
+                    suggestionsDiv.innerHTML = "";
+
+                }
+
+            }
+
+        );
+
+    </script>
+
+</body>
+
+</html>
