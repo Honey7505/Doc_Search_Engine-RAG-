@@ -1,0 +1,25 @@
+# Virtual Environment
+venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Uploaded Files
+uploads/
+
+# Vector Database
+*.index
+*.pkl
+
+# Environment Variables
+.env
+
+# VS Code
+.vscode/
+
+# Linux
+*.swp
+
+# Logs
+*.log
