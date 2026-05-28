@@ -5,212 +5,372 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
-        AI Hybrid Semantic Search
+        Document Search Engine
     </title>
 
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
     <style>
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+        }
 
         body {
 
             font-family: Arial, sans-serif;
 
-            background-color: #f5f5f5;
+            background: #f4f7fb;
 
-            margin: 0;
+            min-height: 100vh;
 
-            padding: 40px;
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            padding: 20px;
+        }
+
+        .main-container {
+
+            width: 100%;
+
+            max-width: 1100px;
+
+            padding: 20px;
         }
 
         h1 {
 
+            text-align: center;
+
             color: #222;
 
-            margin-bottom: 20px;
+            margin-bottom: 35px;
+
+            font-size: 40px;
         }
+
+        /* ========================= */
+        /* Search Form */
+        /* ========================= */
 
         form {
 
             position: relative;
 
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            gap: 10px;
+
             margin-bottom: 30px;
+
+            flex-wrap: wrap;
         }
 
         input {
 
-            width: 600px;
+            flex: 1;
 
-            max-width: 90%;
+            min-width: 250px;
 
-            padding: 14px;
+            width: 100%;
 
-            font-size: 16px;
+            max-width: 750px;
 
-            border-radius: 8px;
+            padding: 16px;
+
+            font-size: 17px;
+
+            border-radius: 14px;
 
             border: 1px solid #ccc;
 
             outline: none;
+
+            transition: 0.3s;
         }
 
         input:focus {
 
-            border-color: #007bff;
+            border-color: #2196f3;
+
+            box-shadow: 0 0 10px rgba(33,150,243,0.3);
         }
 
         button {
 
-            padding: 14px 24px;
-
-            font-size: 16px;
+            padding: 16px 26px;
 
             border: none;
 
-            border-radius: 8px;
+            border-radius: 14px;
 
-            background-color: #007bff;
+            background: #2196f3;
 
             color: white;
 
+            font-size: 16px;
+
             cursor: pointer;
 
-            margin-left: 10px;
+            transition: 0.3s;
         }
 
         button:hover {
 
-            background-color: #0056b3;
+            background: #0b7dda;
         }
+
+        /* ========================= */
+        /* Suggestions Box */
+        /* ========================= */
 
         #suggestions {
 
             position: absolute;
 
-            width: 600px;
+            top: 65px;
 
-            max-width: 90%;
+            width: 100%;
+
+            max-width: 750px;
 
             background: white;
 
-            border: 1px solid #ccc;
+            border-radius: 12px;
 
-            border-top: none;
+            overflow: hidden;
 
-            max-height: 300px;
-
-            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
 
             z-index: 1000;
-
-            border-radius: 0 0 10px 10px;
         }
+
+        /* ========================= */
+        /* Suggestion Item */
+        /* ========================= */
 
         .suggestion-item {
 
-            padding: 12px;
-
-            border-bottom: 1px solid #eee;
+            padding: 14px 18px;
 
             cursor: pointer;
 
-            transition: background 0.2s;
+            border-bottom: 1px solid #eee;
+
+            background-color: white;
+
+            color: black;
+
+            width: 100%;
+
+            transition:
+
+                background-color 0.25s ease,
+
+                color 0.25s ease;
         }
 
         .suggestion-item:hover {
 
-            background-color: #f0f0f0;
-        }
-
-        .result-box {
-
-            background: white;
-
-            padding: 20px;
-
-            margin-bottom: 20px;
-
-            border-radius: 12px;
-
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .result-box h2 {
-
-            margin: 0;
-
-            color: #007bff;
-        }
-
-        .result-box h3 {
-
-            margin-top: 10px;
-
-            color: #333;
-        }
-
-        .result-box p {
-
-            color: #555;
-
-            line-height: 1.6;
-        }
-
-        .open-btn {
-
-            display: inline-block;
-
-            margin-top: 15px;
-
-            padding: 10px 16px;
-
-            background-color: #28a745;
+            background-color: skyblue;
 
             color: white;
-
-            text-decoration: none;
-
-            border-radius: 8px;
         }
 
-        .open-btn:hover {
-
-            background-color: #1f7d34;
-        }
+        /* ========================= */
+        /* Query Box */
+        /* ========================= */
 
         .query-box {
 
             background: white;
 
-            padding: 15px;
+            padding: 20px;
 
-            border-radius: 10px;
+            border-radius: 18px;
 
-            margin-bottom: 20px;
+            margin-bottom: 25px;
 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
 
         .query-box p {
 
-            margin: 5px 0;
+            margin: 8px 0;
+
+            color: #444;
         }
+
+        /* ========================= */
+        /* Result Cards */
+        /* ========================= */
+
+        .result-box {
+
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 20px;
+
+            margin-bottom: 25px;
+
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+
+            transition: 0.3s;
+        }
+
+        .result-box:hover {
+
+            transform: translateY(-3px);
+
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .document-row {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            flex-wrap: wrap;
+        }
+
+        /* ========================= */
+        /* Eye Icon */
+        /* ========================= */
+
+        .eye-icon {
+
+            font-size: 20px;
+
+            color: #666;
+
+            transition: 0.3s;
+        }
+
+        /* ========================= */
+        /* Document Link */
+        /* ========================= */
 
         .document-link {
 
             text-decoration: none;
 
-            color: #007bff;
+            color: #1976d2;
 
-            transition: 0.2s;
+            font-size: 22px;
+
+            font-weight: bold;
+
+            transition: 0.25s;
+
+            word-break: break-word;
         }
 
-       .document-link:hover {
+        .document-link:hover {
 
-        color: #0056b3;
+            color: #0d47a1;
 
-        text-decoration: underline;
+            text-decoration: underline;
+        }
+
+        /* ========================= */
+        /* Result Text */
+        /* ========================= */
+
+        .result-box p {
+
+            margin-top: 16px;
+
+            line-height: 1.7;
+
+            color: #444;
+        }
+
+        .score-text {
+
+            margin-top: 15px;
+
+            font-weight: bold;
+
+            color: #333;
+        }
+
+        /* ========================= */
+        /* Mobile Responsive */
+        /* ========================= */
+
+        @media (max-width: 768px) {
+
+            body {
+
+                padding: 15px;
+            }
+
+            h1 {
+
+                font-size: 28px;
+            }
+
+            form {
+
+                flex-direction: column;
+            }
+
+            input {
+
+                width: 100%;
+            }
+
+            button {
+
+                width: 100%;
+            }
+
+            #suggestions {
+
+                position: relative;
+
+                top: 0;
+
+                width: 100%;
+            }
+
+            .document-link {
+
+                font-size: 18px;
+            }
+
+            .result-box {
+
+                padding: 18px;
+            }
         }
 
     </style>
@@ -219,75 +379,80 @@
 
 <body>
 
-    <h1>
-        Document Search Engine
-    </h1>
+    <div class="main-container">
 
-    <!-- ========================= -->
-    <!-- Search Form -->
-    <!-- ========================= -->
+        <h1>
+            Document Search Engine
+        </h1>
 
-    <form method="POST">
+        <!-- ========================= -->
+        <!-- Search Form -->
+        <!-- ========================= -->
 
-        <input
-            type="text"
-            name="query"
-            id="search-box"
-            placeholder="Search documents..."
-            autocomplete="off"
-            required
-        >
+        <form method="POST">
 
-        <button type="submit">
-            Search
-        </button>
+            <input
+                type="text"
+                name="query"
+                id="search-box"
+                placeholder="Search documents..."
+                autocomplete="off"
+                required
+            >
 
-        <!-- Suggestions -->
-        <div id="suggestions"></div>
+            <button type="submit">
+                Search
+            </button>
 
-    </form>
+            <!-- Suggestions -->
+            <div id="suggestions"></div>
 
-    <!-- ========================= -->
-    <!-- Query Information -->
-    <!-- ========================= -->
+        </form>
 
-    {% if original_query %}
+        <!-- ========================= -->
+        <!-- Query Information -->
+        <!-- ========================= -->
 
-        <div class="query-box">
+        {% if original_query %}
 
-            <p>
-                <strong>Original Query:</strong>
-                {{ original_query }}
-            </p>
+            <div class="query-box">
 
-            <p>
-                <strong>Corrected Query:</strong>
-                {{ corrected_query }}
-            </p>
+                <p>
+                    <strong>Original Query:</strong>
+                    {{ original_query }}
+                </p>
 
-            <p>
-                <strong>Expanded Query:</strong>
-                {{ expanded_query }}
-            </p>
+                <p>
+                    <strong>Corrected Query:</strong>
+                    {{ corrected_query }}
+                </p>
 
-        </div>
+                <p>
+                    <strong>Expanded Query:</strong>
+                    {{ expanded_query }}
+                </p>
 
-    {% endif %}
+            </div>
 
-    <!-- ========================= -->
-    <!-- Search Results -->
-    <!-- ========================= -->
+        {% endif %}
 
-    {% for result in results %}
+        <!-- ========================= -->
+        <!-- Results -->
+        <!-- ========================= -->
 
-        <div class="result-box">
+        {% for result in results %}
 
-            <h2>
-                Rank {{ result.rank }}
-            </h2>
+            <div class="result-box">
 
-            <h3>
+                <div class="document-row">
 
+                    <!-- Eye Icon -->
+                    <i
+                        class="fa-solid fa-eye-slash eye-icon"
+                        id="eye-{{ loop.index }}"
+                    ></i>
+
+                    <!-- Clickable Document -->
                     <a
 
                         href="{{ url_for('open_document', filename=result.file) }}"
@@ -295,36 +460,35 @@
                         target="_blank"
 
                         class="document-link"
+
+                        onclick="markAsRead({{ loop.index }})"
                     >
 
-                    {{ result.file }}
+                        {{ result.file }}
 
                     </a>
 
-            </h3>
+                </div>
 
-            <p>
-                {{ result.text }}
-            </p>
+                <p>
+                    {{ result.text }}
+                </p>
 
-            <p>
-                <strong>Hybrid Score:</strong>
-                {{ result.score }}
-            </p>
+                <!--<div class="score-text">
 
-            <a
-                href="{{ url_for('open_document', filename=result.file) }}"
-                target="_blank"
-                class="document-link"
-            >   
-            </a>
+                    Hybrid Score:
+                    {{ result.score }}
 
-        </div>
+                </div>-->
 
-    {% endfor %}
+            </div>
+
+        {% endfor %}
+
+    </div>
 
     <!-- ========================= -->
-    <!-- Autocomplete Script -->
+    <!-- JavaScript -->
     <!-- ========================= -->
 
     <script>
@@ -338,7 +502,7 @@
         );
 
         // =========================
-        // Autocomplete
+        // Autocomplete Suggestions
         // =========================
 
         searchBox.addEventListener(
@@ -349,7 +513,7 @@
 
                 const query = searchBox.value;
 
-                // Minimum query length
+                // Minimum characters
                 if (query.length < 2) {
 
                     suggestionsDiv.innerHTML = "";
@@ -367,10 +531,10 @@
 
                     const data = await response.json();
 
-                    // Clear old suggestions
+                    // Clear previous
                     suggestionsDiv.innerHTML = "";
 
-                    // Show suggestions
+                    // Create suggestions
                     data.suggestions.forEach(item => {
 
                         const div = document.createElement(
@@ -388,7 +552,7 @@
 
                             window.open(
 
-                                `/open/${encodeURIComponent(item.file)}`,
+                                `/open/${encodeURIComponent(item.file.trim())}`,
 
                                 "_blank"
 
@@ -434,6 +598,29 @@
             }
 
         );
+
+        // =========================
+        // Eye Toggle
+        // =========================
+
+        function markAsRead(index) {
+
+            const eyeIcon = document.getElementById(
+
+                `eye-${index}`
+
+            );
+
+            eyeIcon.classList.remove(
+                "fa-eye-slash"
+            );
+
+            eyeIcon.classList.add(
+                "fa-eye"
+            );
+
+            eyeIcon.style.color = "#2196f3";
+        }
 
     </script>
 

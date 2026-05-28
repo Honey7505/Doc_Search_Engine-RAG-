@@ -3,29 +3,25 @@
 # =========================
 
 import os
-import re
 import pickle
-import numpy as np
 import faiss
 import fitz
 import cv2
 import pytesseract
+import numpy as np
 
-from pdf2image import convert_from_path
+from PIL import Image
+from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
 
 # =========================
-# CONFIG
+# FOLDERS
 # =========================
 
-DOCUMENTS_FOLDER = "documents"
-
-CHUNK_SIZE = 500
-
-CHUNK_OVERLAP = 100
+DOCUMENTS_FOLDER = "sample"
 
 # =========================
-# Load Embedding Model
+# LOAD MODEL
 # =========================
 
 print("Loading embedding model...")
@@ -38,195 +34,159 @@ model = SentenceTransformer(
 print("Model loaded!")
 
 # =========================
-# OCR FUNCTION
+# OCR PDF TEXT EXTRACTOR
 # =========================
 
-def extract_text_from_scanned_pdf(pdf_path):
+def extract_text_from_pdf(pdf_path):
 
     full_text = ""
 
     try:
 
-        print(f"OCR Processing: {pdf_path}")
-
-        pages = convert_from_path(
-
-            pdf_path,
-
-            dpi=200
-        )
-
-        for page_num, page in enumerate(pages):
-
-            # PIL -> OpenCV
-            image = np.array(page)
-
-            image = cv2.cvtColor(
-
-                image,
-
-                cv2.COLOR_RGB2BGR
-            )
-
-            # =========================
-            # Preprocessing
-            # =========================
-
-            gray = cv2.cvtColor(
-
-                image,
-
-                cv2.COLOR_BGR2GRAY
-            )
-
-            gray = cv2.GaussianBlur(
-
-                gray,
-
-                (5, 5),
-
-                0
-            )
-
-            thresh = cv2.threshold(
-
-                gray,
-
-                0,
-
-                255,
-
-                cv2.THRESH_BINARY + cv2.THRESH_OTSU
-
-            )[1]
-
-            # =========================
-            # OCR
-            # =========================
-
-            text = pytesseract.image_to_string(
-                thresh
-            )
-
-            full_text += "\n" + text
-
-            print(
-                f"OCR Page {page_num + 1} completed"
-            )
-
-    except Exception as e:
-
-        print(f"OCR Error: {e}")
-
-    return full_text
-
-# =========================
-# PDF TEXT EXTRACTION
-# =========================
-
-def extract_pdf_text(pdf_path):
-
-    text = ""
-
-    try:
-
         doc = fitz.open(pdf_path)
 
-        for page in doc:
+        print(f"Reading: {pdf_path}")
 
-            page_text = page.get_text()
+        for page_num in range(len(doc)):
 
-            text += page_text
+            page = doc[page_num]
+
+            # =========================
+            # NORMAL TEXT EXTRACTION
+            # =========================
+
+            text = page.get_text()
+
+            # If normal PDF text exists
+            if text.strip():
+
+                full_text += text + " "
+
+            else:
+
+                print(
+                    f"OCR Page: {page_num + 1}"
+                )
+
+                # =========================
+                # CONVERT PAGE TO IMAGE
+                # =========================
+
+                pix = page.get_pixmap()
+
+                img = Image.frombytes(
+
+                    "RGB",
+
+                    [pix.width, pix.height],
+
+                    pix.samples
+                )
+
+                img_np = np.array(img)
+
+                # =========================
+                # IMAGE PREPROCESSING
+                # =========================
+
+                gray = cv2.cvtColor(
+
+                    img_np,
+
+                    cv2.COLOR_RGB2GRAY
+                )
+
+                # Noise removal
+                gray = cv2.GaussianBlur(
+
+                    gray,
+
+                    (3, 3),
+
+                    0
+                )
+
+                # Thresholding
+                gray = cv2.threshold(
+
+                    gray,
+
+                    0,
+
+                    255,
+
+                    cv2.THRESH_BINARY + cv2.THRESH_OTSU
+
+                )[1]
+
+                # =========================
+                # OCR
+                # =========================
+
+                ocr_text = pytesseract.image_to_string(
+                    gray
+                )
+
+                full_text += ocr_text + " "
 
         doc.close()
 
     except Exception as e:
 
-        print(f"PDF Read Error: {e}")
-
-    # =========================
-    # OCR Fallback
-    # =========================
-
-    if len(text.strip()) < 50:
-
         print(
-            f"Scanned PDF detected: {pdf_path}"
+            "ERROR:",
+            pdf_path,
+            e
         )
 
-        text = extract_text_from_scanned_pdf(
-            pdf_path
-        )
-
-    return text
+    return full_text
 
 # =========================
-# CLEAN TEXT
+# SPLIT TEXT INTO CHUNKS
 # =========================
 
-def clean_text(text):
-
-    text = re.sub(
-
-        r"\s+",
-
-        " ",
-
-        text
-
-    )
-
-    return text.strip()
-
-# =========================
-# CHUNK TEXT
-# =========================
-
-def chunk_text(text):
+def split_text(text, chunk_size=500):
 
     words = text.split()
 
     chunks = []
 
-    start = 0
+    for i in range(
 
-    while start < len(words):
+        0,
 
-        end = start + CHUNK_SIZE
+        len(words),
 
-        chunk = words[start:end]
+        chunk_size
+    ):
 
-        chunk = " ".join(chunk)
+        chunk = " ".join(
+
+            words[i:i + chunk_size]
+
+        )
 
         chunks.append(chunk)
 
-        start += (
-            CHUNK_SIZE - CHUNK_OVERLAP
-        )
-
     return chunks
-
-# =========================
-# CREATE DATA
-# =========================
-
-documents = []
-
-metadata = []
-
-print("Reading PDF files...")
 
 # =========================
 # READ DOCUMENTS
 # =========================
 
-for filename in os.listdir(
-    DOCUMENTS_FOLDER
+all_chunks = []
+
+metadata = []
+
+print("Scanning documents...")
+
+for filename in tqdm(
+
+    os.listdir(DOCUMENTS_FOLDER)
+
 ):
 
-    if not filename.lower().endswith(
-        ".pdf"
-    ):
+    if not filename.lower().endswith(".pdf"):
 
         continue
 
@@ -237,51 +197,38 @@ for filename in os.listdir(
         filename
     )
 
-    print(f"\nProcessing: {filename}")
-
     # =========================
-    # Extract Text
+    # EXTRACT TEXT
     # =========================
 
-    text = extract_pdf_text(
+    text = extract_text_from_pdf(
         pdf_path
     )
 
-    text = clean_text(text)
-
-    if len(text) == 0:
+    if not text.strip():
 
         print(
-            f"Skipping empty file: {filename}"
+            f"No text found: {filename}"
         )
 
         continue
 
-    print(
-        f"Text Length: {len(text)}"
+    # =========================
+    # SPLIT INTO CHUNKS
+    # =========================
+
+    chunks = split_text(
+        text,
+        chunk_size=500
     )
-
-    # =========================
-    # Chunking
-    # =========================
-
-    chunks = chunk_text(
-        text
-    )
-
-    print(
-        f"Total Chunks: {len(chunks)}"
-    )
-
-    # =========================
-    # Save Chunks
-    # =========================
 
     for chunk in chunks:
 
-        documents.append(
-            chunk
-        )
+        if len(chunk.strip()) < 20:
+
+            continue
+
+        all_chunks.append(chunk)
 
         metadata.append({
 
@@ -291,28 +238,33 @@ for filename in os.listdir(
 
         })
 
+print(
+    f"Total Chunks: {len(all_chunks)}"
+)
+
 # =========================
-# Create Embeddings
+# CREATE EMBEDDINGS
 # =========================
 
-print("\nCreating embeddings...")
+print("Creating embeddings...")
 
 embeddings = model.encode(
 
-    documents,
+    all_chunks,
 
-    batch_size=64,
+    batch_size=32,
 
     show_progress_bar=True,
 
     convert_to_numpy=True
+)
 
-).astype("float32")
-
-print("Embeddings created!")
+embeddings = embeddings.astype(
+    "float32"
+)
 
 # =========================
-# Normalize Embeddings
+# NORMALIZE EMBEDDINGS
 # =========================
 
 faiss.normalize_L2(
@@ -320,12 +272,10 @@ faiss.normalize_L2(
 )
 
 # =========================
-# Create FAISS Index
+# CREATE FAISS INDEX
 # =========================
 
 dimension = embeddings.shape[1]
-
-print("Creating FAISS index...")
 
 index = faiss.IndexFlatIP(
     dimension
@@ -336,11 +286,11 @@ index.add(
 )
 
 print(
-    f"Total vectors indexed: {index.ntotal}"
+    f"Indexed Vectors: {index.ntotal}"
 )
 
 # =========================
-# Save FAISS Index
+# SAVE INDEX
 # =========================
 
 faiss.write_index(
@@ -350,10 +300,8 @@ faiss.write_index(
     "document_index.faiss"
 )
 
-print("FAISS index saved!")
-
 # =========================
-# Save Metadata
+# SAVE METADATA
 # =========================
 
 with open(
@@ -369,14 +317,4 @@ with open(
         f
     )
 
-print("Metadata saved!")
-
-# =========================
-# COMPLETE
-# =========================
-
-print("\n=================================")
-
-print("INDEX BUILD COMPLETED SUCCESSFULLY")
-
-print("=================================")
+print("Index saved successfully!")
