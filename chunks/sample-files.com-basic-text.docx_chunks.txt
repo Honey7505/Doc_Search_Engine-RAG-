@@ -1,4 +1,0 @@
-
-========== Chunk 1 ==========
-Sample Document This is a simple one-page document that demonstrates various text formatting options commonly found in DOCX files. Basic Text Formatting Here is some text with bold formatting and italic formatting. You can also have bold and italic text combined. Lists Here's a bulleted list: First item Second item Third item with some italic text And a numbered list: First numbered item Second numbered item Third numbered item with bold text Different Sizes and Alignment This paragraph demonstrates normal body text size and alignment. It contains multiple sentences to show how text flows in a typical document. Additional Formatting You can also have: monospace text for code or technical content strikethrough text when needed blockquotes for quoted content This sample DOCX file is provided by Sample-Files.com. Visit us for more sample files and resources.
-
